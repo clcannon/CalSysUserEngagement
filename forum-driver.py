@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import r2_score
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 
-# ints going into SQL queries are more convenient as strings.
+# ints going inpipto SQL queries are more convenient as strings.
 forum_id = '77'
 forum_post_threshold = '50'
 
