@@ -9,8 +9,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import r2_score
 from sklearn.metrics import confusion_matrix
 
-net = get_net("pickleX77.p")
-
+#net = get_net("pickleX77.p")
+net = get_net("pickleX{forum_id}.p")
 def get_f1(user):
     return list(net.neighbors(user))
 
@@ -69,7 +69,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, rando
 #Questions for Marin: What is PNE? Need access to database with forum 77! How to get root neighbor for negative samples?
 
 
-# Creating the Model (Optimised)
+# Creating the Model (Optimized)
 # model = RandomForestClassifier(max_depth=2, random_state=0)
 # model.fit(X_train,Y_train)
 # Y_pred = model.predict(X_test)

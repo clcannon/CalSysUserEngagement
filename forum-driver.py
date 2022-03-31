@@ -10,11 +10,15 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 
 # ints going inpipto SQL queries are more convenient as strings.
-forum_id = '77'
+
+forum_id = input("Enter forum id: ")
+#forum_id = '77'
 forum_post_threshold = '50'
 
 # load in social network graph for respective forum
-net = get_net("pickleX77.p")
+net = get_net(f'pickleX{forum_id}.p')
+
+#net = get_net("pickleX77.p")
 
 # get "forum" - topic_id and user_id of every post
 forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
