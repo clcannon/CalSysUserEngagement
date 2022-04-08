@@ -13,9 +13,13 @@ from getFeatures import get_all
 from matplotlib import pyplot as plt
 
 
-forum = get('t_users', 'users_id, forums_id')
-thread = get('t_users', 'users_id')
+forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + 77)
+
+thread = get('t_posts', cols="topics_id", where='forums_id = ' + 77,
+             modifier='group by topics_id having count(*) > ' + 50)
 userNodesList = thread['users_id'].to_list()
+
+
 G = nx.DiGraph()
 
 for user in range(len(userNodesList)):
