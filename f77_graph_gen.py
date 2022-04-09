@@ -13,10 +13,10 @@ from getFeatures import get_all
 from matplotlib import pyplot as plt
 
 
-forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + 77)
+forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + '77')
 
-thread = get('t_posts', cols="topics_id", where='forums_id = ' + 77,
-             modifier='group by topics_id having count(*) > ' + 50)
+thread = get('t_posts', cols="users_id", where='forums_id = ' + '77',
+             modifier='group by users_id having count(*) > ' + '50')
 userNodesList = thread['users_id'].to_list()
 
 
@@ -31,4 +31,6 @@ for user in range(len(userNodesList)):
             G.add_edge(user, neighbor)
 
 print(userNodesList)
-
+# pos = nx.spring_layout(G, seed=225)  # Seed for reproducible layout
+# nx.draw(G,pos)
+# plt.show()
