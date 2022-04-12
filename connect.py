@@ -1,28 +1,29 @@
 import pandas as pd
 import psycopg2
 
+
 def gen_df(rows, cols, tablename, conn):
     if isinstance(cols, list):
-        return pd.DataFrame(data=rows, columns = cols)
+        return pd.DataFrame(data=rows, columns=cols)
     else:
         temp = []
         x = cols.split(",")
         for i in x:
             temp.append(i.split()[-1])
-        return pd.DataFrame(data=rows, columns = temp)
+        return pd.DataFrame(data=rows, columns=temp)
 
 
-def get(table_name, cols='*', where=None, modifier=None, wantrows = False):
+def get(table_name, cols='*', where=None, modifier=None, wantrows=False):
     q = df = None
-    
+
     try:
         connection = psycopg2.connect(
-        host='localhost',  # host on which the database is running
-        database='Test',  # name of the database to connect to
-        user='postgres',  # username to connect with
-        password='Hastviz@825564'  # insert your password here
-    )
-    except: 
+            host='localhost',  # host on which the database is running
+            database='Test2',  # name of the database to connect to
+            user='postgres',  # username to connect with
+            password='123'  # insert your password here
+        )
+    except:
         print('Connection failed...')
         pass
 
@@ -43,6 +44,34 @@ def get(table_name, cols='*', where=None, modifier=None, wantrows = False):
         df = gen_df(rows, cols, table_name, connection)
         connection.close()
         if wantrows:
-            return df, len(rows) # can take out length to get all data in tuples
+            return df, len(rows)  # can take out length to get all data in tuples
+        else:
+            return df
+
+
+def get_q(query, cols, table_name, wantrows=False):
+    q = df = None
+    q = query
+
+    try:
+        connection = psycopg2.connect(
+            host='localhost',  # host on which the database is running
+            database='Test2',  # name of the database to connect to
+            user='postgres',  # username to connect with
+            password='123'  # insert your password here
+        )
+    except:
+        print('Connection failed...')
+        pass
+
+    else:
+        cursor = connection.cursor()
+        print(f'Firing ...{q}')
+        cursor.execute(q)
+        rows = cursor.fetchall()
+        df = gen_df(rows, cols, table_name, connection)
+        connection.close()
+        if wantrows:
+            return df, len(rows)  # can take out length to get all data in tuples
         else:
             return df
