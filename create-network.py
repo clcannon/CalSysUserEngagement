@@ -37,5 +37,5 @@ having count(posts_id) > 5 and count(distinct topics_id) > 5)\
 group by topics_id\
 having count(posts_id) > 5 and count(distinct users_id) > 5'
 
-threads = get_q(get_users_query, 'users_id', 't_posts')
+threads = get_q(get_threads_query, 'topics_id', 't_posts')
 
