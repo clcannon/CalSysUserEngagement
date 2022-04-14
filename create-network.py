@@ -12,8 +12,11 @@ from feature import get_net, show_net
 from getFeatures import get_all
 from matplotlib import pyplot as plt
 
-participating_users_threshold = 5
-post_threshold = 5
+user_posts_threshold = 5
+user_threads_threshold = 5
+
+thread_posts_threshold = 5
+thread_users_threshold = 5
 
 # Query from db
 start = time_ns()
@@ -96,9 +99,8 @@ for index, post in threads.iterrows():
             continue
         # edges save the difference in time between nodes with regards to a post
         g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
-        print('' + users_id + ' ' + user + ' ' + g.get_edge_data(users_id, user))
-
-
+        #print('' + str(users_id) + ' ' + str(user) + ' ' + str(g.get_edge_data(users_id, user)))
 
 print(g.edges)
+print(nx.info(g))
 print("ldkfhjsa")
