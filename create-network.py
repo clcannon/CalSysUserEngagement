@@ -99,7 +99,7 @@ def create_graph(upt, utt, tpt, tut):
         # add thread to thread_info dict
         if topics_id not in thread_info:
             thread_info[topics_id] = list()
-            thread_info[topics_id].append([users_id, posted_date])
+        thread_info[topics_id].append([users_id, posted_date])
 
         # make edges between all those who posted in thread previous
 
