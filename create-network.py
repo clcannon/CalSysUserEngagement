@@ -76,10 +76,11 @@ def create_graph(upt, utt, tpt, tut):
 
     print_timing("Get from DB")
 
-    g = nx.DiGraph()
+    g = nx.MultiDiGraph()
 
     # dictionary for holding info as: key = topics_id, vals = users_id
     thread_info = {}
+    users_per_thread = {}
 
     # For each valid post, make relevant connections
     for index, post in threads.iterrows():
@@ -114,9 +115,11 @@ def create_graph(upt, utt, tpt, tut):
 
 
 create_graph(0, 0, 0, 0)
-create_graph(0, 0, 5, 5)
-create_graph(5, 5, 0, 0)
-create_graph(5, 5, 5, 5)
-create_graph(0, 0, 10, 10)
-create_graph(10, 10, 0, 0)
+# create_graph(0, 0, 5, 5)
+# create_graph(5, 5, 0, 0)
+# create_graph(5, 5, 5, 5)
+# create_graph(0, 0, 10, 10)
+# create_graph(10, 10, 0, 0)
 create_graph(10, 10, 10, 10)
+
+print("stop")
