@@ -19,7 +19,7 @@ def print_timing(section: str):
     start = time_ns()
 
 
-def create_graph(upt, utt, tpt, tut):
+def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
     user_posts_threshold = upt
     user_threads_threshold = utt
 
@@ -31,7 +31,7 @@ def create_graph(upt, utt, tpt, tut):
     start = time_ns()
 
     get_users_query = 'select users_id from t_posts \
-    where forums_id = 77 \
+    where forums_id = ' + str(forum_id) + ' \
     group by users_id \
     having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > '\
                       + str(user_threads_threshold) + ''
@@ -43,13 +43,13 @@ def create_graph(upt, utt, tpt, tut):
                         'where topics_id in (' \
                         'select distinct topics_id ' \
                         'from t_posts ' \
-                        'where forums_id = 77 and topics_id in ( ' \
+                        'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
                         'select distinct topics_id ' \
                         'from t_posts ' \
-                        'where forums_id = 77 and users_id in (' \
+                        'where forums_id = ' + str(forum_id) + ' and users_id in (' \
                         'select users_id ' \
                         'from t_posts ' \
-                        'where forums_id = 77 ' \
+                        'where forums_id = ' + str(forum_id) + ' ' \
                         'group by users_id ' \
                         'having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
                         + str(user_threads_threshold) + ')' \
@@ -111,15 +111,22 @@ def create_graph(upt, utt, tpt, tut):
             g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
             #print('' + str(users_id) + ' ' + str(user) + ' ' + str(g.get_edge_data(users_id, user)))
 
-    print(nx.info(g))
+    print_timing("Create MultiDiGraph")
+    print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
 
 
-create_graph(0, 0, 0, 0)
-# create_graph(0, 0, 5, 5)
-# create_graph(5, 5, 0, 0)
-# create_graph(5, 5, 5, 5)
-# create_graph(0, 0, 10, 10)
-# create_graph(10, 10, 0, 0)
-create_graph(10, 10, 10, 10)
+# create_graph(0, 0, 0, 0, 77)
+# create_graph(0, 0, 5, 5, 77)
+# create_graph(5, 5, 0, 0, 77)
+# create_graph(5, 5, 5, 5, 77)
+# create_graph(0, 0, 10, 10, 77)
+# create_graph(10, 10, 0, 0, 77)
+create_graph(10, 10, 10, 10, 77)
 
-print("stop")
+# create_graph(0, 0, 0, 0, 84)
+# create_graph(0, 0, 5, 5, 84)
+# create_graph(5, 5, 0, 0, 84)
+# create_graph(5, 5, 5, 5, 84)
+# create_graph(0, 0, 10, 10, 84)
+# create_graph(10, 10, 0, 0, 84)
+# create_graph(10, 10, 10, 10, 84)
