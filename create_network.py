@@ -112,8 +112,8 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
             #print('' + str(users_id) + ' ' + str(user) + ' ' + str(g.get_edge_data(users_id, user)))
 
     print_timing("Create MultiDiGraph")
-    print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
-
+    #print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
+    return g, thread_info
 
 # create_graph(0, 0, 0, 0, 77)
 # create_graph(0, 0, 5, 5, 77)
@@ -130,3 +130,7 @@ create_graph(10, 10, 10, 10, 77)
 # create_graph(0, 0, 10, 10, 84)
 # create_graph(10, 10, 0, 0, 84)
 # create_graph(10, 10, 10, 10, 84)
+
+
+
+
