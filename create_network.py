@@ -11,12 +11,7 @@ from connect import get, get_q
 from feature import get_net, show_net
 from getFeatures import get_all
 from matplotlib import pyplot as plt
-
-
-def print_timing(section: str):
-    global start
-    print(f"{section:30}", ((time_ns() - start) // 1000000) / 1000, "s")
-    start = time_ns()
+import timing
 
 
 def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
@@ -33,7 +28,7 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
     get_users_query = 'select users_id from t_posts \
     where forums_id = ' + str(forum_id) + ' \
     group by users_id \
-    having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > '\
+    having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
                       + str(user_threads_threshold) + ''
 
     users = get_q(get_users_query, 'users_id', 't_posts')
@@ -44,21 +39,24 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
                         'select distinct topics_id ' \
                         'from t_posts ' \
                         'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
-                        'select distinct topics_id ' \
-                        'from t_posts ' \
-                        'where forums_id = ' + str(forum_id) + ' and users_id in (' \
-                        'select users_id ' \
-                        'from t_posts ' \
-                        'where forums_id = ' + str(forum_id) + ' ' \
-                        'group by users_id ' \
-                        'having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
+                                                               'select distinct topics_id ' \
+                                                               'from t_posts ' \
+                                                               'where forums_id = ' + str(
+        forum_id) + ' and users_id in (' \
+                    'select users_id ' \
+                    'from t_posts ' \
+                    'where forums_id = ' + str(forum_id) + ' ' \
+                                                           'group by users_id ' \
+                                                           'having count(posts_id) > ' + str(
+        user_posts_threshold) + ' and count(distinct topics_id) > ' \
                         + str(user_threads_threshold) + ')' \
-                        ') ' \
-                        'group by topics_id ' \
-                        'having count(posts_id) > ' + str(thread_posts_threshold) + ' and count(distinct users_id) > '\
+                                                        ') ' \
+                                                        'group by topics_id ' \
+                                                        'having count(posts_id) > ' + str(
+        thread_posts_threshold) + ' and count(distinct users_id) > ' \
                         + str(thread_users_threshold) + '' \
-                        ') ' \
-                        'order by posted_date asc'
+                                                        ') ' \
+                                                        'order by posted_date asc'
 
     users_ids = []
 
@@ -70,11 +68,7 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
 
     threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
-
-
-
-
-    print_timing("Get from DB")
+    timing.print_timing("Get from DB")
 
     g = nx.MultiDiGraph()
 
@@ -109,10 +103,9 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
                 continue
             # edges save the difference in time between nodes with regards to a post
             g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
-            #print('' + str(users_id) + ' ' + str(user) + ' ' + str(g.get_edge_data(users_id, user)))
 
-    print_timing("Create MultiDiGraph")
-    #print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
+    timing.print_timing("Create MultiDiGraph")
+    # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
     return g, thread_info
 
 # create_graph(0, 0, 0, 0, 77)
@@ -121,7 +114,7 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
 # create_graph(5, 5, 5, 5, 77)
 # create_graph(0, 0, 10, 10, 77)
 # create_graph(10, 10, 0, 0, 77)
-create_graph(10, 10, 10, 10, 77)
+# create_graph(10, 10, 10, 10, 77)
 
 # create_graph(0, 0, 0, 0, 84)
 # create_graph(0, 0, 5, 5, 84)
@@ -130,7 +123,3 @@ create_graph(10, 10, 10, 10, 77)
 # create_graph(0, 0, 10, 10, 84)
 # create_graph(10, 10, 0, 0, 84)
 # create_graph(10, 10, 10, 10, 84)
-
-
-
-
