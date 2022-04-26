@@ -17,7 +17,6 @@ import create_network
 
 # create_graph requires postgres database with correct database loaded.
 # Set database configurations in connect.py
-g, thread_info = create_network.create_graph(10, 10, 10, 10, 77)
 
 # for every t_sus and t_fos,
 
@@ -32,6 +31,8 @@ t_fos_values = [8]
 
 n_positive_samples = 100
 n_negative_samples = 100
+
+g, thread_info = create_network.create_graph(10, 10, 10, 10, 77, t_sus_values, t_fos_values)
 
 for t_sus in t_sus_values:
 

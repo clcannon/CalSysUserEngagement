@@ -10,6 +10,8 @@ def create_balanced_dataset(g, thread_info, n_positive_instances, n_negative_ins
 
 
 def create_positive_instances(g, thread_info, n_positive_instances, t_sus, t_fos):
+    # should return user, features, classification
+
     # For each thread,
     for topic in thread_info:
         print(topic)

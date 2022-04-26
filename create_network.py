@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import timing
 
 
-def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
+def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_vals, t_fos_vals):
     user_posts_threshold = upt
     user_threads_threshold = utt
 
@@ -70,10 +70,9 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
 
     timing.print_timing("Get from DB")
 
-    g = nx.MultiDiGraph()
-
     # dictionary for holding info as: key = topics_id, vals = users_id
     thread_info = {}
+    topics_list = []
     users_per_thread = {}
 
     # For each valid post, make relevant connections
@@ -82,29 +81,44 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
         topics_id = post['topics_id']
         posted_date = post['posted_date']
 
+        # this is a filtering workaround
         # ignore nodes that are not in the initially queried users list
         if users_id not in users_ids:
             continue
 
-        # add user node if not already in the graph
-        if not g.has_node(users_id):
-            g.add_node(users_id)
-
         # add thread to thread_info dict
         if topics_id not in thread_info:
             thread_info[topics_id] = list()
+            topics_list.append(topics_id)
+
+        # add each post to thread
         thread_info[topics_id].append([users_id, posted_date])
 
         # make edges between all those who posted in thread previous
 
-        for user, date in thread_info[topics_id]:
-            # prevents edges to self
-            if user == users_id:
-                continue
-            # edges save the difference in time between nodes with regards to a post
-            g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
 
-    timing.print_timing("Create MultiDiGraph")
+    # create the graph
+
+    g = nx.MultiDiGraph()
+    for topics_id in topics_list:
+        for user, date in thread_info[topics_id]:
+
+            user_list = []
+
+            print(str(topics_id) + " " + str(user) + " " + str(date))
+
+            # add user node if not already in the graph
+            # if not g.has_node(users_id):
+            #     g.add_node(users_id)
+
+
+            # prevents edges to self
+            # if user == users_id:
+            #     continue
+            # # edges save the difference in time between nodes with regards to a post
+            # g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
+
+    timing.print_timing("Collect ThreadInfo")
     # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
     return g, thread_info
 
