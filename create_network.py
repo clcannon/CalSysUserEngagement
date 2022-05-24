@@ -102,21 +102,21 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
     g = nx.MultiDiGraph()
     for topics_id in topics_list:
         for user, date in thread_info[topics_id]:
-
+            
             user_list = []
 
             print(str(topics_id) + " " + str(user) + " " + str(date))
 
             # add user node if not already in the graph
-            # if not g.has_node(users_id):
-            #     g.add_node(users_id)
+            if not g.has_node(users_id):
+                g.add_node(users_id)
 
 
             # prevents edges to self
-            # if user == users_id:
-            #     continue
-            # # edges save the difference in time between nodes with regards to a post
-            # g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
+            if user == users_id:
+                continue
+            # edges save the difference in time between nodes with regards to a post
+            g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
 
     timing.print_timing("Collect ThreadInfo")
     # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
