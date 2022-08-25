@@ -15,6 +15,7 @@ import timing
 
 
 def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_vals, t_fos_vals):
+
     user_posts_threshold = upt
     user_threads_threshold = utt
 
@@ -25,48 +26,50 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
     global start
     start = time_ns()
 
-    get_users_query = 'select users_id from t_posts \
-    where forums_id = ' + str(forum_id) + ' \
-    group by users_id \
-    having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
-                      + str(user_threads_threshold) + ''
+    users, threads = get_users_and_threads(user_posts_threshold, user_threads_threshold, thread_posts_threshold, thread_users_threshold, forum_id)
 
-    users = get_q(get_users_query, 'users_id', 't_posts')
-
-    get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
-                        'from t_posts ' \
-                        'where topics_id in (' \
-                        'select distinct topics_id ' \
-                        'from t_posts ' \
-                        'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
-                                                               'select distinct topics_id ' \
-                                                               'from t_posts ' \
-                                                               'where forums_id = ' + str(
-        forum_id) + ' and users_id in (' \
-                    'select users_id ' \
-                    'from t_posts ' \
-                    'where forums_id = ' + str(forum_id) + ' ' \
-                                                           'group by users_id ' \
-                                                           'having count(posts_id) > ' + str(
-        user_posts_threshold) + ' and count(distinct topics_id) > ' \
-                        + str(user_threads_threshold) + ')' \
-                                                        ') ' \
-                                                        'group by topics_id ' \
-                                                        'having count(posts_id) > ' + str(
-        thread_posts_threshold) + ' and count(distinct users_id) > ' \
-                        + str(thread_users_threshold) + '' \
-                                                        ') ' \
-                                                        'order by posted_date asc'
-
-    users_ids = []
-
-    # find a way to remove this. its just getting a list of user id's. All one-liners tested returned lists of lists
-    # or incorrectly shaped lists.
-    for index, post in users.iterrows():
-        # check if user_id is in relevant users, else continue
-        users_ids.append(post['users_id'])
-
-    threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
+    # get_users_query = 'select users_id from t_posts \
+    # where forums_id = ' + str(forum_id) + ' \
+    # group by users_id \
+    # having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
+    #                   + str(user_threads_threshold) + ''
+    #
+    # users = get_q(get_users_query, 'users_id', 't_posts')
+    #
+    # get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
+    #                     'from t_posts ' \
+    #                     'where topics_id in (' \
+    #                     'select distinct topics_id ' \
+    #                     'from t_posts ' \
+    #                     'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
+    #                                                            'select distinct topics_id ' \
+    #                                                            'from t_posts ' \
+    #                                                            'where forums_id = ' + str(
+    #     forum_id) + ' and users_id in (' \
+    #                 'select users_id ' \
+    #                 'from t_posts ' \
+    #                 'where forums_id = ' + str(forum_id) + ' ' \
+    #                                                        'group by users_id ' \
+    #                                                        'having count(posts_id) > ' + str(
+    #     user_posts_threshold) + ' and count(distinct topics_id) > ' \
+    #                     + str(user_threads_threshold) + ')' \
+    #                                                     ') ' \
+    #                                                     'group by topics_id ' \
+    #                                                     'having count(posts_id) > ' + str(
+    #     thread_posts_threshold) + ' and count(distinct users_id) > ' \
+    #                     + str(thread_users_threshold) + '' \
+    #                                                     ') ' \
+    #                                                     'order by posted_date asc'
+    #
+    # users_ids = []
+    #
+    # # find a way to remove this. its just getting a list of user id's. All one-liners tested returned lists of lists
+    # # or incorrectly shaped lists.
+    # for index, post in users.iterrows():
+    #     # check if user_id is in relevant users, else continue
+    #     users_ids.append(post['users_id'])
+    #
+    # threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
     timing.print_timing("Get from DB")
 
@@ -108,19 +111,75 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
             print(str(topics_id) + " " + str(user) + " " + str(date))
 
             # add user node if not already in the graph
-            # if not g.has_node(users_id):
-            #     g.add_node(users_id)
+            if not g.has_node(users_id):
+                g.add_node(users_id)
 
 
             # prevents edges to self
-            # if user == users_id:
-            #     continue
-            # # edges save the difference in time between nodes with regards to a post
-            # g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
+            if user == users_id:
+                continue
+            # edges save the difference in time between nodes with regards to a post
+            g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
 
     timing.print_timing("Collect ThreadInfo")
     # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
     return g, thread_info
+
+def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
+    user_posts_threshold = upt
+    user_threads_threshold = utt
+
+    thread_posts_threshold = tpt
+    thread_users_threshold = tut
+
+    # Query from db
+    global start
+    start = time_ns()
+
+    get_users_query = 'select users_id from t_posts \
+        where forums_id = ' + str(forum_id) + ' \
+        group by users_id \
+        having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
+                      + str(user_threads_threshold) + ''
+
+    users = get_q(get_users_query, 'users_id', 't_posts')
+
+    get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
+                        'from t_posts ' \
+                        'where topics_id in (' \
+                        'select distinct topics_id ' \
+                        'from t_posts ' \
+                        'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
+                                                               'select distinct topics_id ' \
+                                                               'from t_posts ' \
+                                                               'where forums_id = ' + str(
+        forum_id) + ' and users_id in (' \
+                    'select users_id ' \
+                    'from t_posts ' \
+                    'where forums_id = ' + str(forum_id) + ' ' \
+                                                           'group by users_id ' \
+                                                           'having count(posts_id) > ' + str(
+        user_posts_threshold) + ' and count(distinct topics_id) > ' \
+                        + str(user_threads_threshold) + ')' \
+                                                        ') ' \
+                                                        'group by topics_id ' \
+                                                        'having count(posts_id) > ' + str(
+        thread_posts_threshold) + ' and count(distinct users_id) > ' \
+                        + str(thread_users_threshold) + '' \
+                                                        ') ' \
+                                                        'order by posted_date asc'
+
+    users_ids = []
+
+    # find a way to remove this. its just getting a list of user id's. All one-liners tested returned lists of lists
+    # or incorrectly shaped lists.
+    for index, post in users.iterrows():
+        # check if user_id is in relevant users, else continue
+        users_ids.append(post['users_id'])
+
+    threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
+
+    return users, threads
 
 # create_graph(0, 0, 0, 0, 77)
 # create_graph(0, 0, 5, 5, 77)
