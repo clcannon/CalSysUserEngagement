@@ -28,7 +28,7 @@ def create_positive_instances(g, thread_info, n_positive_instances, t_sus, t_fos
             dicActiveNeighbors = {}
             listTime = []
             listExposures = []
-            get_active_neighbors
+            # get_active_neighbors
 
 
 
