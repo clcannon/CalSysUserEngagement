@@ -11,7 +11,6 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 import config
 
 forum_config = config.get_config(config, "FORUM")
-#forum_id = input("Enter forum id: ")
 forum_id = forum_config.get("ID")
 forum_post_threshold = forum_config.get("POST_THRESHOLD")
 
