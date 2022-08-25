@@ -8,12 +8,12 @@ from Learning import trainall
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import r2_score
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+import config
 
-# ints going inpipto SQL queries are more convenient as strings.
-
-forum_id = input("Enter forum id: ")
-#forum_id = '77'
-forum_post_threshold = '50'
+forum_config = config.get_config(config, "FORUM")
+#forum_id = input("Enter forum id: ")
+forum_id = forum_config.get("ID")
+forum_post_threshold = forum_config.get("POST_THRESHOLD")
 
 # load in social network graph for respective forum
 net = get_net(f'pickleX{forum_id}.p')

@@ -1,5 +1,6 @@
 import pandas as pd
 import psycopg2
+import config as config
 
 
 def gen_df(rows, cols, tablename, conn):
@@ -15,13 +16,14 @@ def gen_df(rows, cols, tablename, conn):
 
 def get(table_name, cols='*', where=None, modifier=None, wantrows=False):
     q = df = None
+    dbconfig = config.get_config(config, "DATABASE")
 
     try:
         connection = psycopg2.connect(
-            host='localhost',  # host on which the database is running
-            database='Test',  # name of the database to connect to
-            user='postgres',  # username to connect with
-            password='Hastviz@825564'  # insert your password here
+            host=dbconfig.get("HOST"),  # host on which the database is running
+            database=dbconfig.get("DATABASE"),  # name of the database to connect to
+            user=dbconfig.get("USER"),  # username to connect with
+            password=dbconfig.get("PASSWORD")  # insert your password here
         )
     except:
         print('Connection failed...')
@@ -52,13 +54,14 @@ def get(table_name, cols='*', where=None, modifier=None, wantrows=False):
 def get_q(query, cols, table_name, wantrows=False):
     q = df = None
     q = query
+    dbconfig = config.get_config(config, "DATABASE")
 
     try:
         connection = psycopg2.connect(
-            host='localhost',  # host on which the database is running
-            database='Test',  # name of the database to connect to
-            user='postgres',  # username to connect with
-            password='Hastviz@825564'  # insert your password here
+            host=dbconfig.get("HOST"),  # host on which the database is running
+            database=dbconfig.get("DATABASE"),  # name of the database to connect to
+            user=dbconfig.get("USER"),  # username to connect with
+            password=dbconfig.get("PASSWORD")  # insert your password here
         )
     except:
         print('Connection failed...')
