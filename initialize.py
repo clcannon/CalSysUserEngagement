@@ -32,6 +32,8 @@ t_fos_values = [8]
 n_positive_samples = 100
 n_negative_samples = 100
 
+# why is tsus and tfos needed?
+
 g, thread_info = create_network.create_graph(10, 10, 10, 10, 77, t_sus_values, t_fos_values)
 
 for t_sus in t_sus_values:

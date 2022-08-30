@@ -30,9 +30,8 @@ def get_f3(users):  # G.out_degree(1) average
     return sum / len(users)
 
 
-def get_all(N, positive_users):
+def get_all(positive_users):
     global net
-    net = N
     data = []
     for pos_topic in positive_users:
         for i in np.arange(1, len(pos_topic) - 1):

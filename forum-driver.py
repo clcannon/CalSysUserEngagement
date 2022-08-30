@@ -1,3 +1,4 @@
+import create_network
 from connect import get
 from feature import get_net, show_net
 from getFeatures import get_all
@@ -14,8 +15,16 @@ forum_config = config.get_config(config, "FORUM")
 forum_id = forum_config.get("ID")
 forum_post_threshold = forum_config.get("POST_THRESHOLD")
 
+network_config = config.get_config(config, "NETWORK")
+
 # load in social network graph for respective forum
-net = get_net(f'pickleX{forum_id}.p')
+#net = create_network.create_graph(network_config.get("USER_POSTS_THRESHOLD"),
+#                                  network_config.get("USER_THREADS_THRESHOLD"),
+#                                  network_config.get("THREAD_POSTS_THRESHOLD"),
+#                                  network_config.get("THREAD_USERS_THRESHOLD"),
+#                                  forum_id)
+
+#net = get_net(f'pickleX{forum_id}.p')
 
 #net = get_net("pickleX77.p")
 
@@ -27,7 +36,7 @@ thread = get('t_posts', cols="topics_id", where='forums_id = ' + forum_id,
              modifier='group by topics_id having count(*) > ' + forum_post_threshold)  # needs to be distinct
 topic_list = thread['topics_id'].to_list()
 
-# creats list of users per thread (active users) in relation to another user (if within ts)
+# creates list of users per thread (active users) in relation to another user (if within ts)
 positive_users = []
 for topic in topic_list:
     users = forum[forum['topics_id'] == topic]['users_id'].to_list()
@@ -43,7 +52,7 @@ for topic in topic_list:
 # every time relationship created, tsus updated
 
 # need a better idea of what this is doing
-dataSet = get_all(net, positive_users)
+dataSet = get_all(positive_users)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class

@@ -13,67 +13,24 @@ from getFeatures import get_all
 from matplotlib import pyplot as plt
 import timing
 
+# Makes a big graph, return big df too?
+def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int):
 
-def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_vals, t_fos_vals):
+    upt = user_posts_threshold
+    utt = user_threads_threshold
 
-    user_posts_threshold = upt
-    user_threads_threshold = utt
-
-    thread_posts_threshold = tpt
-    thread_users_threshold = tut
+    tpt = thread_posts_threshold
+    tut = thread_users_threshold
 
     # Query from db
     global start
     start = time_ns()
 
-    users, threads = get_users_and_threads(user_posts_threshold, user_threads_threshold, thread_posts_threshold, thread_users_threshold, forum_id)
-
-    # get_users_query = 'select users_id from t_posts \
-    # where forums_id = ' + str(forum_id) + ' \
-    # group by users_id \
-    # having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
-    #                   + str(user_threads_threshold) + ''
-    #
-    # users = get_q(get_users_query, 'users_id', 't_posts')
-    #
-    # get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
-    #                     'from t_posts ' \
-    #                     'where topics_id in (' \
-    #                     'select distinct topics_id ' \
-    #                     'from t_posts ' \
-    #                     'where forums_id = ' + str(forum_id) + ' and topics_id in ( ' \
-    #                                                            'select distinct topics_id ' \
-    #                                                            'from t_posts ' \
-    #                                                            'where forums_id = ' + str(
-    #     forum_id) + ' and users_id in (' \
-    #                 'select users_id ' \
-    #                 'from t_posts ' \
-    #                 'where forums_id = ' + str(forum_id) + ' ' \
-    #                                                        'group by users_id ' \
-    #                                                        'having count(posts_id) > ' + str(
-    #     user_posts_threshold) + ' and count(distinct topics_id) > ' \
-    #                     + str(user_threads_threshold) + ')' \
-    #                                                     ') ' \
-    #                                                     'group by topics_id ' \
-    #                                                     'having count(posts_id) > ' + str(
-    #     thread_posts_threshold) + ' and count(distinct users_id) > ' \
-    #                     + str(thread_users_threshold) + '' \
-    #                                                     ') ' \
-    #                                                     'order by posted_date asc'
-    #
-    # users_ids = []
-    #
-    # # find a way to remove this. its just getting a list of user id's. All one-liners tested returned lists of lists
-    # # or incorrectly shaped lists.
-    # for index, post in users.iterrows():
-    #     # check if user_id is in relevant users, else continue
-    #     users_ids.append(post['users_id'])
-    #
-    # threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
-
+    users, threads = get_users_and_threads(upt, utt, tpt, tut, forum_id)
     timing.print_timing("Get from DB")
 
     # dictionary for holding info as: key = topics_id, vals = users_id
+    # df it?
     thread_info = {}
     topics_list = []
     users_per_thread = {}
@@ -86,12 +43,12 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
 
         # this is a filtering workaround
         # ignore nodes that are not in the initially queried users list
-        if users_id not in users_ids:
+        if users_id not in users:
             continue
 
         # add thread to thread_info dict
         if topics_id not in thread_info:
-            thread_info[topics_id] = list()
+            thread_info[topics_id] = []
             topics_list.append(topics_id)
 
         # add each post to thread
@@ -100,10 +57,12 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
         # make edges between all those who posted in thread previous
 
 
-    # create the graph
+    # t_sus and t_fos here?
 
+    # create the graph
     g = nx.MultiDiGraph()
     for topics_id in topics_list:
+        # for every post in topic, when someone replies to a post, they are influence-able by everyone who posted ahead
         for user, date in thread_info[topics_id]:
 
             user_list = []
@@ -111,9 +70,8 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
             print(str(topics_id) + " " + str(user) + " " + str(date))
 
             # add user node if not already in the graph
-            if not g.has_node(users_id):
-                g.add_node(users_id)
-
+            if not g.has_node(user):
+                g.add_node(user)
 
             # prevents edges to self
             if user == users_id:
@@ -124,6 +82,7 @@ def create_graph(upt: int, utt: int, tpt: int, tut: int, forum_id: int, t_sus_va
     timing.print_timing("Collect ThreadInfo")
     # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
     return g, thread_info
+
 
 def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int):
     user_posts_threshold = upt
@@ -179,7 +138,7 @@ def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int)
 
     threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
-    return users, threads
+    return users_ids, threads
 
 # create_graph(0, 0, 0, 0, 77)
 # create_graph(0, 0, 5, 5, 77)
