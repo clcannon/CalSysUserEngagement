@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import timing
 
 # Makes a big graph, return big df too?
-def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int):
+def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int, t_sus, t_fos):
 
     upt = user_posts_threshold
     utt = user_threads_threshold
@@ -35,7 +35,7 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
     topics_list = []
     users_per_thread = {}
 
-    # For each valid post, make relevant connections
+    # Turn loose posts into dictionary of threads with posts in order
     for index, post in threads.iterrows():
         users_id = post['users_id']
         topics_id = post['topics_id']
@@ -49,38 +49,48 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
         # add thread to thread_info dict
         if topics_id not in thread_info:
             thread_info[topics_id] = []
+            # topics list can be surgically removed for sake of memory
             topics_list.append(topics_id)
 
         # add each post to thread
+        # double check they are in date order?
+        # constrain this by t_fos?
         thread_info[topics_id].append([users_id, posted_date])
 
         # make edges between all those who posted in thread previous
-
-
     # t_sus and t_fos here?
+    # maybe just t_sus...?
 
     # create the graph
+    # For each valid post, make relevant connections
+    # Trim initial graph by t_sus, if t_sus is not 0. if 0, do not trim
     g = nx.MultiDiGraph()
     for topics_id in topics_list:
-        # for every post in topic, when someone replies to a post, they are influence-able by everyone who posted ahead
+        # for every post in topic, when someone replies to a post, they are influence-able by everyone who posted before
+        user_list = set()
+
         for user, date in thread_info[topics_id]:
-
-            user_list = []
-
-            print(str(topics_id) + " " + str(user) + " " + str(date))
+            # print(str(topics_id) + " " + str(user) + " " + str(date))
 
             # add user node if not already in the graph
             if not g.has_node(user):
                 g.add_node(user)
 
-            # prevents edges to self
-            if user == users_id:
-                continue
-            # edges save the difference in time between nodes with regards to a post
-            g.add_edge(users_id, user, topic=topics_id, diff=(posted_date - date))
+            user_list.add(user)
 
+            for users_id in user_list:
+                # prevents edges to self
+                if user == users_id:
+                    continue
+            # edges save the difference in time between nodes with regards to a post
+                # diff - diff between it and prev. Diff between new and then? Just the date?
+                # date by which influence was received
+                g.add_edge(users_id, user, topic=topics_id, date=date)
     timing.print_timing("Collect ThreadInfo")
     # print("" + str(upt) + " " + str(utt) + " " + str(tpt) + " " + str(tut) + ": " + str(g))
+    if len(g.nodes) < 20:
+        nx.draw(g, with_labels=True)
+        plt.show()
     return g, thread_info
 
 
@@ -101,6 +111,7 @@ def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int)
         having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
                       + str(user_threads_threshold) + ''
 
+    print(get_users_query)
     users = get_q(get_users_query, 'users_id', 't_posts')
 
     get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
@@ -136,6 +147,7 @@ def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int)
         # check if user_id is in relevant users, else continue
         users_ids.append(post['users_id'])
 
+    print(get_threads_query)
     threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
     return users_ids, threads
