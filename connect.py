@@ -3,7 +3,7 @@ import psycopg2
 import config as config
 
 
-def gen_df(rows, cols, tablename, conn):
+def gen_df(rows, cols):
     if isinstance(cols, list):
         return pd.DataFrame(data=rows, columns=cols)
     else:
@@ -43,7 +43,7 @@ def get(table_name, cols='*', where=None, modifier=None, wantrows=False):
         print(f'Firing ...{q}')
         cursor.execute(q)
         rows = cursor.fetchall()
-        df = gen_df(rows, cols, table_name, connection)
+        df = gen_df(rows, cols)
         connection.close()
         if wantrows:
             return df, len(rows)  # can take out length to get all data in tuples
@@ -72,7 +72,7 @@ def get_q(query, cols, table_name, wantrows=False):
         print(f'Firing ...{q}')
         cursor.execute(q)
         rows = cursor.fetchall()
-        df = gen_df(rows, cols, table_name, connection)
+        df = gen_df(rows, cols)
         connection.close()
         if wantrows:
             return df, len(rows)  # can take out length to get all data in tuples
