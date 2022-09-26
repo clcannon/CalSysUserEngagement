@@ -13,9 +13,25 @@ from getFeatures import get_all
 from matplotlib import pyplot as plt
 import timing
 
-# Makes a big graph, return big df too?
-def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int, t_sus, t_fos):
 
+def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int, t_sus, t_fos):
+    """
+    Takes filtering thresholds and forum id to get thread posts in order. This method then uses the sequential posts
+    to create a social network MultiDiGraph.
+    Each edge of the social network graph represents a user v posting in reply to a user v' at time t.
+    Each edge comprises of two weights: time (time of post) and topic (topic post contained in)
+    For this network (and whole program) a "neighbor" of a user represents an inward connection (influence flowing
+    towards the user)
+
+    :param user_posts_threshold: The amount of posts a user must post else trimmed from dataset
+    :param user_threads_threshold: The amount of unique threads a user must post to else be trimmed from the dataset
+    :param thread_posts_threshold:
+    :param thread_users_threshold:
+    :param forum_id:
+    :param t_sus:
+    :param t_fos:
+    :return:
+    """
     upt = user_posts_threshold
     utt = user_threads_threshold
 
@@ -32,8 +48,6 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
     # dictionary for holding info as: key = topics_id, vals = users_id
     # df it?
     thread_info = {}
-    topics_list = []
-    users_per_thread = {}
 
     # Turn loose posts into dictionary of threads with posts in order
     for index, post in threads.iterrows():
@@ -49,8 +63,6 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
         # add thread to thread_info dict
         if topics_id not in thread_info:
             thread_info[topics_id] = []
-            # topics list can be surgically removed for sake of memory
-            topics_list.append(topics_id)
 
         # add each post to thread
         # double check they are in date order?
@@ -58,14 +70,12 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
         thread_info[topics_id].append([users_id, posted_date])
 
         # make edges between all those who posted in thread previous
-    # t_sus and t_fos here?
-    # maybe just t_sus...?
 
     # create the graph
     # For each valid post, make relevant connections
     # Trim initial graph by t_sus, if t_sus is not 0. if 0, do not trim
     g = nx.MultiDiGraph()
-    for topics_id in topics_list:
+    for topics_id in thread_info:
         # for every post in topic, when someone replies to a post, they are influence-able by everyone who posted before
         user_list = set()
 
@@ -151,19 +161,3 @@ def get_users_and_threads(upt: int, utt: int, tpt: int, tut: int, forum_id: int)
     threads = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
     return users_ids, threads
-
-# create_graph(0, 0, 0, 0, 77)
-# create_graph(0, 0, 5, 5, 77)
-# create_graph(5, 5, 0, 0, 77)
-# create_graph(5, 5, 5, 5, 77)
-# create_graph(0, 0, 10, 10, 77)
-# create_graph(10, 10, 0, 0, 77)
-# create_graph(10, 10, 10, 10, 77)
-
-# create_graph(0, 0, 0, 0, 84)
-# create_graph(0, 0, 5, 5, 84)
-# create_graph(5, 5, 0, 0, 84)
-# create_graph(5, 5, 5, 5, 84)
-# create_graph(0, 0, 10, 10, 84)
-# create_graph(10, 10, 0, 0, 84)
-# create_graph(10, 10, 10, 10, 84)
