@@ -8,13 +8,12 @@ from time import time_ns, sleep
 import multiprocessing as mp
 from multiprocessing import Process
 from connect import get, get_q
-from feature import get_net, show_net
 from getFeatures import get_all
 from matplotlib import pyplot as plt
 import timing
 
 
-def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int, t_sus, t_fos):
+def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_posts_threshold: int, thread_users_threshold: int, forum_id: int,):
     """
     Takes filtering thresholds and forum id to get thread posts in order. This method then uses the sequential posts
     to create a social network MultiDiGraph.
@@ -28,8 +27,6 @@ def create_graph(user_posts_threshold: int, user_threads_threshold: int, thread_
     :param thread_posts_threshold:
     :param thread_users_threshold:
     :param forum_id:
-    :param t_sus:
-    :param t_fos:
     :return:
     """
     upt = user_posts_threshold
