@@ -48,7 +48,7 @@ for topic in thread_info:
 # early adopters : only took one or two active users to adopt - define early adopters
 
 # need a better idea of what this is doing
-dataSet = get_all(thread_info, positive_users, net, t_sus, t_fos)
+dataSet = get_all(thread_info, net, t_sus, t_fos)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class
