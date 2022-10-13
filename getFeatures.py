@@ -6,7 +6,9 @@ from time import time_ns
 import timing
 from datetime import timedelta
 
+
 # TODO: Put timing in this!!!
+# TODO: Use ordered list for logn times
 
 # note that neighbors for sake of this research are in-neighbors only.
 
@@ -27,12 +29,8 @@ def get_active_neighbors(prev_posts, neighbors, t, t_fos):
     for post in prev_posts:
         user = post[0]
         date = post[1]
-        if user in neighbors and date > t_fos:
+        if user in neighbors and t >= date > t_fos:
             active_neighbors.add(user)
-    #
-    # for neighbor in neighbors:
-    #     if neighbor in prev_posts:
-    #         active_neighbors += 1
     return active_neighbors
 
 
@@ -90,8 +88,24 @@ def get_in_neighbors_at_time(in_edges, t, t_sus, net):
     return neighbors
 
 
+def get_root_user(prev_posts, t, t_fos):
+    t_fos = t - t_fos
+    for user, date in prev_posts:
+        if t >= date > t_fos:
+            return user
+    return None
+
+
 # extend this to take bit array of features?
-def get_all(thread_info, positive_users, N, t_sus, t_fos):
+def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
+    for user in root_neighbors:
+        active_neighbors = get_active_neighbors(prev_posts, root_neighbors, t, t_fos)
+        if len(active_neighbors) > 1 and user not in prev_posters:
+            return user
+    return None
+
+
+def get_all(thread_info, N, t_sus, t_fos):
     net = N
     data = []
 
@@ -114,25 +128,26 @@ def get_all(thread_info, positive_users, N, t_sus, t_fos):
                 PNE = get_PNE(NAN, len(in_neighbors))
 
                 # make negative sample
-                # change this maybe as we are tightly coupled to 1:1 ratio
-                rand_user = user
-                while (rand_user in prev_posters or user == rand_user) and len(prev_posters) != len(positive_users[thread]):
-                    rand_user_index = random.randint(len(prev_posts), len(thread_posts)-1)
-                    rand_user = thread_posts[rand_user_index][0]
-                if user == rand_user or rand_user in prev_posters:
+                root_user = get_root_user(prev_posts, time, t_fos)
+                if not root_user:
                     continue
-                in_neighbors_negative = get_in_neighbors_at_time(net.in_edges(rand_user), time, t_sus, net)
+                root_neighbors = get_in_neighbors_at_time(net.in_edges(root_user), time, t_sus, net)
+                # someone who has not posted in the thread but has 2 active neighbors wrt thread (root + 1 additional)
+                negative_user = get_negative_user(prev_posts, prev_posters, root_neighbors, time, t_fos)
+                if not negative_user:
+                    continue
+                in_neighbors_negative = get_in_neighbors_at_time(net.in_edges(negative_user), time, t_sus, net)
                 NAN_negative = get_NAN(prev_posts, in_neighbors_negative, time, t_fos)
                 if NAN_negative < 1:
                     continue
                 PNE_negative = get_PNE(NAN_negative, len(in_neighbors_negative))
                 # only appends if both samples were good? change this?
                 data.append([user, NAN, PNE, 1])
-                # currently, each user should get an positive record.
+                # currently, each user should get a positive record.
                 in_dataset.add(user)
                 print(user, len(in_neighbors), NAN, PNE, 1)
-                data.append([rand_user, NAN_negative, PNE_negative, 0])
-                print(rand_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
+                data.append([negative_user, NAN_negative, PNE_negative, 0])
+                print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
     df = pd.DataFrame(data, columns=['user_id', 'F1', 'F2', 'Class'])
     df.to_csv('dataset.csv', header=True, index=False)
     return df
