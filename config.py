@@ -1,12 +1,8 @@
 import yaml
+from sys import argv
 
 config = None
-file_path = "config.yaml"
-
-
-def __init__(self):
-    self.file_path = "config.yaml"
-    self.config = None
+file_path = argv[1] if len(argv) == 2 else "config.yaml"
 
 
 # config should only need to be called once then can be retrieved by any file.
