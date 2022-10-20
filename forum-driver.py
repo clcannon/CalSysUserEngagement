@@ -59,7 +59,7 @@ trainall(X_train, X_test, Y_train, Y_test)
 
 
 # Creating the Model (Optimised)
-model = RandomForestClassifier(max_depth=2, random_state=0)
+model = RandomForestClassifier()
 model.fit(X_train, Y_train)
 Y_pred = model.predict(X_test)
 # conf = round((r2_score(Y_test,Y_pred))*100,3)
