@@ -68,9 +68,6 @@ print('Confusion Matrix : \n', confusion_matrix(Y_test, Y_pred))
 print(f"{round(accuracy, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
 
 
-# Improvement: More features(ex.PNE), more users, more topics, imbalanced dataset/more realistic.
-
-
 def remove_duplicates_preserve_order(users_list):
     seen = set()
     seen_add = seen.add
