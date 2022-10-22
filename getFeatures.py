@@ -145,9 +145,9 @@ def get_all(thread_info, N, t_sus, t_fos):
                 data.append([user, NAN, PNE, 1])
                 # currently, each user should get a positive record.
                 in_dataset.add(user)
-                print(user, len(in_neighbors), NAN, PNE, 1)
+                # print(user, len(in_neighbors), NAN, PNE, 1)
                 data.append([negative_user, NAN_negative, PNE_negative, 0])
-                print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
+                # print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
     df = pd.DataFrame(data, columns=['user_id', 'F1', 'F2', 'Class'])
     df.to_csv('dataset.csv', header=True, index=False)
     return df

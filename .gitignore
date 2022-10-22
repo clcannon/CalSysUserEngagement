@@ -1,2 +1,5 @@
-
+/configs/*.yaml
 config.yaml
+__pycache__/*
+output.txt
+dataset.csv
