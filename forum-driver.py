@@ -1,3 +1,4 @@
+from bitarray import bitarray
 from create_network import query_data, create_network, create_thread_info
 from connect import get
 from getFeatures import get_all
@@ -8,15 +9,30 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 import config
 from datetime import timedelta
 
+# Get forum config
 forum_config = config.get_config(config, "FORUM")
 forum_id = forum_config.get("ID")
 forum_post_threshold = forum_config.get("POST_THRESHOLD")
 
+# Get network config
 network_config = config.get_config(config, "NETWORK")
-t_config = config.get_config(config, "TAO")
 
+# Get tao config
+t_config = config.get_config(config, "TAO")
 t_sus = timedelta(hours=int(t_config.get("SUSCEPTIBLE")))
 t_fos = timedelta(hours=int(t_config.get("FORGETTABLE")))
+
+# Get feature config
+feature_config = config.get_config(config, "FEATURE")
+
+# Create features bit array
+# 0 - NAN
+# 1 - PNE
+# 2 - HUB
+features_bits = bitarray()
+for feature in feature_config:
+    val = 1 if (feature_config[feature] == "True" or feature_config[feature] == "TRUE" or feature_config[feature] == "true") else 0
+    features_bits.append(val)
 
 # load in social network graph for respective forum
 # currently create_network is coupled to the data retrieval... change?
@@ -31,18 +47,11 @@ net = create_network(thread_info)
 # get "forum" - topic_id and user_id of every post
 forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
 
-# creates list of users per thread (active users) in relation to another user (if within ts)
-# I think we should use this. Just for the list of users not having to be made later?
-positive_users = {}
-for topic in thread_info:
-    users = forum[forum['topics_id'] == topic]['users_id'].to_list()
-    positive_users[topic] = (set(users))
-
 # first in topic is the innovator
 # early adopters : only took one or two active users to adopt - define early adopters
 
 # need a better idea of what this is doing
-dataSet = get_all(thread_info, net, t_sus, t_fos)
+dataSet = get_all(thread_info, net, t_sus, t_fos, features_bits)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class
