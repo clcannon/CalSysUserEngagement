@@ -40,7 +40,7 @@ def query_data(user_posts_threshold: int, user_threads_threshold: int, thread_po
             having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
                       + str(user_threads_threshold) + ''
 
-    print(get_users_query)
+    # print(get_users_query)
     users = get_q(get_users_query, 'users_id', 't_posts')
 
     get_threads_query = 'select topics_id, posts_id, users_id, posted_date ' \
@@ -76,7 +76,7 @@ def query_data(user_posts_threshold: int, user_threads_threshold: int, thread_po
         # check if user_id is in relevant users, else continue
         users_ids.append(post['users_id'])
 
-    print(get_threads_query)
+    # print(get_threads_query)
     posts = get_q(get_threads_query, ['topics_id', 'posts_id', 'users_id', 'posted_date'], 't_posts')
 
     timing.print_timing("Get from DB")
@@ -122,6 +122,11 @@ def create_thread_info(users, posts):
 
 
 def create_network(thread_info):
+    """
+    Creates a network graph with thread information. Network is meant to represent whole network without time constraints.
+    :param thread_info:
+    :return:
+    """
     g = nx.MultiDiGraph()
     for topics_id in thread_info:
         # for every post in topic, when someone replies to a post, they are influence-able by everyone who posted before

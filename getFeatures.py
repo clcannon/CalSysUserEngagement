@@ -64,7 +64,6 @@ def get_f2(active_neighbors, user, net):
         return active_neighbors / x
 
 
-# what is this?
 def get_f3(users, net):  # G.out_degree(1) average
     summation = 0
     for usr in users:
@@ -96,7 +95,6 @@ def get_root_user(prev_posts, t, t_fos):
     return None
 
 
-# extend this to take bit array of features?
 def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
     for user in root_neighbors:
         active_neighbors = get_active_neighbors(prev_posts, root_neighbors, t, t_fos)
@@ -105,20 +103,25 @@ def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
     return None
 
 
-def get_all(thread_info, N, t_sus, t_fos):
+def get_all(thread_info, N, t_sus, t_fos, features_bits):
     net = N
     data = []
+
+    if not features_bits.any():
+        print("No features in configuration. Model requires at least 1 feature to run.")
+        return 1
 
     for thread in thread_info:
         thread_posts = thread_info[thread]
         prev_posts = []
-        in_dataset = set()
         prev_posters = set()
+        in_dataset = set()
         for user, time in thread_posts:
             prev_posts.append((user, time))
             prev_posters.add(user)
             # can't have active neighbors without previous posts
             if len(prev_posts) > 1:
+                # skip user if they are already in dataset for this topic
                 if user in in_dataset:
                     continue
                 in_neighbors = get_in_neighbors_at_time(net.in_edges(user), time, t_sus, net)
@@ -142,12 +145,35 @@ def get_all(thread_info, N, t_sus, t_fos):
                     continue
                 PNE_negative = get_PNE(NAN_negative, len(in_neighbors_negative))
                 # only appends if both samples were good? change this?
-                data.append([user, NAN, PNE, 1])
+                data_row = [user]
+                if features_bits[0]:
+                    data_row.append(NAN)
+                if features_bits[1]:
+                    data_row.append(PNE)
+                data_row.append(1)
+                data.append(data_row)
+                # data.append([user, NAN, PNE, 1])
                 # currently, each user should get a positive record.
                 in_dataset.add(user)
                 # print(user, len(in_neighbors), NAN, PNE, 1)
-                data.append([negative_user, NAN_negative, PNE_negative, 0])
+                negative_data_row = [negative_user]
+                if features_bits[0]:
+                    negative_data_row.append(NAN_negative)
+                if features_bits[1]:
+                    negative_data_row.append(PNE_negative)
+                negative_data_row.append(0)
+                data.append(negative_data_row)
+                #data.append([negative_user, NAN_negative, PNE_negative, 0])
+
                 # print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
-    df = pd.DataFrame(data, columns=['user_id', 'F1', 'F2', 'Class'])
+    columns = ['user_id']
+    if features_bits[0]:
+        columns.append('NAN')
+    if features_bits[1]:
+        columns.append('PNE')
+    if features_bits[2]:
+        columns.append('HUB')
+    columns.append('Class')
+    df = pd.DataFrame(data, columns=columns)
     df.to_csv('dataset.csv', header=True, index=False)
     return df

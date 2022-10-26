@@ -40,7 +40,7 @@ def get(table_name, cols='*', where=None, modifier=None, wantrows=False):
         else:
             q = f'SELECT {cols} FROM {table_name} WHERE {where} {modifier};'
 
-        print(f'Firing ...{q}')
+        # print(f'Firing ...{q}')
         cursor.execute(q)
         rows = cursor.fetchall()
         df = gen_df(rows, cols)
@@ -69,7 +69,7 @@ def get_q(query, cols, table_name, wantrows=False):
 
     else:
         cursor = connection.cursor()
-        print(f'Firing ...{q}')
+        # print(f'Firing ...{q}')
         cursor.execute(q)
         rows = cursor.fetchall()
         df = gen_df(rows, cols)
