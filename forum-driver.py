@@ -58,6 +58,7 @@ Y = dataSet.pop('Class')  # Class
 X = dataSet.drop('user_id', axis=1)
 # change this to 50/50?
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=60)
+
 trainall(X_train, X_test, Y_train, Y_test)
 
 # Creating the Model (Optimised)
@@ -76,8 +77,3 @@ print(f"The precision of the model is {round(precision, 5) * 100} %")
 print('Confusion Matrix : \n', confusion_matrix(Y_test, Y_pred))
 print(f"{round(accuracy, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
 
-
-def remove_duplicates_preserve_order(users_list):
-    seen = set()
-    seen_add = seen.add
-    return [x for x in users_list if not (x in seen or seen_add(x))]
