@@ -1,10 +1,6 @@
-import networkx as nx
-import numpy as np
-import random
 import pandas as pd
 from time import time_ns
 import timing
-from datetime import timedelta
 
 
 # TODO: Put timing in this!!!
@@ -35,7 +31,41 @@ def get_active_neighbors(prev_posts, neighbors, t, t_fos):
 
 
 def get_NAN(prev_posts, neighbors, t, t_fos):
-    return len(get_active_neighbors(prev_posts, neighbors, t, t_fos))
+    active_neighbors = get_active_neighbors(prev_posts, neighbors, t, t_fos)
+    return len(active_neighbors)
+
+
+def get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_fos, net):
+    active_neighbors = set()
+    hubs_count = 0
+    t_fos = t - t_fos
+    for user, date in prev_posts:
+        if user in in_neighbors and t >= date > t_fos:
+            if user not in active_neighbors:
+                active_neighbors.add(user)
+                if len(net.out_edges(user)) > 50:
+                    hubs_count += 1
+    return active_neighbors, hubs_count
+
+
+def get_NAN_and_HUB(prev_posts, in_neighbors, t, t_fos, net):
+    active_neighbors, hubs = get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_fos, net)
+    return len(active_neighbors), hubs
+
+
+def get_active_neighbors_and_NAN(prev_posts, neighbors, t, t_fos):
+    active_neighbors = get_active_neighbors(prev_posts, neighbors, t, t_fos)
+    return active_neighbors, len(active_neighbors)
+
+
+# TODO: Make the hub threshold configurable from a higher level
+def get_HUB(active_neighbors, net):
+    hub_count = 0
+    for neighbor in active_neighbors:
+        out_count = net.out_edges(neighbor)
+        if len(out_count) > 50:
+            hub_count += 1
+    return hub_count
 
 
 def get_f1(positive_users, user, net):
@@ -104,6 +134,9 @@ def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
 
 
 def get_all(thread_info, N, t_sus, t_fos, features_bits):
+    global start
+    start = time_ns()
+
     net = N
     data = []
 
@@ -125,10 +158,14 @@ def get_all(thread_info, N, t_sus, t_fos, features_bits):
                 if user in in_dataset:
                     continue
                 in_neighbors = get_in_neighbors_at_time(net.in_edges(user), time, t_sus, net)
-                NAN = get_NAN(prev_posts, in_neighbors, time, t_fos)
+                if features_bits[2]:
+                    NAN, HUB = get_NAN_and_HUB(prev_posts, in_neighbors, time, t_fos, net)
+                else:
+                    NAN = get_NAN(prev_posts, in_neighbors, time, t_fos)
                 if NAN < 1:
                     continue
-                PNE = get_PNE(NAN, len(in_neighbors))
+                if features_bits[1]:
+                    PNE = get_PNE(NAN, len(in_neighbors))
 
                 # make negative sample
                 root_user = get_root_user(prev_posts, time, t_fos)
@@ -140,16 +177,23 @@ def get_all(thread_info, N, t_sus, t_fos, features_bits):
                 if not negative_user:
                     continue
                 in_neighbors_negative = get_in_neighbors_at_time(net.in_edges(negative_user), time, t_sus, net)
-                NAN_negative = get_NAN(prev_posts, in_neighbors_negative, time, t_fos)
+                if features_bits[2]:
+                    NAN_negative, HUB_negative = get_NAN_and_HUB(prev_posts, in_neighbors_negative, time, t_fos, net)
+                else:
+                    NAN_negative = get_NAN(prev_posts, in_neighbors_negative, time, t_fos)
                 if NAN_negative < 1:
                     continue
-                PNE_negative = get_PNE(NAN_negative, len(in_neighbors_negative))
+                if features_bits[1]:
+                    PNE_negative = get_PNE(NAN_negative, len(in_neighbors_negative))
+                # HUB_negative = get_HUB(active_neighbors_negative, net)
                 # only appends if both samples were good? change this?
                 data_row = [user]
                 if features_bits[0]:
                     data_row.append(NAN)
                 if features_bits[1]:
                     data_row.append(PNE)
+                if features_bits[2]:
+                    data_row.append(HUB)
                 data_row.append(1)
                 data.append(data_row)
                 # data.append([user, NAN, PNE, 1])
@@ -161,19 +205,25 @@ def get_all(thread_info, N, t_sus, t_fos, features_bits):
                     negative_data_row.append(NAN_negative)
                 if features_bits[1]:
                     negative_data_row.append(PNE_negative)
+                if features_bits[2]:
+                    negative_data_row.append(HUB_negative)
                 negative_data_row.append(0)
                 data.append(negative_data_row)
-                #data.append([negative_user, NAN_negative, PNE_negative, 0])
-
                 # print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
     columns = ['user_id']
+    data_message = "Compiled Data: "
     if features_bits[0]:
         columns.append('NAN')
+        data_message += "NAN "
     if features_bits[1]:
         columns.append('PNE')
+        data_message += "PNE "
     if features_bits[2]:
         columns.append('HUB')
+        data_message += "HUB "
+
     columns.append('Class')
     df = pd.DataFrame(data, columns=columns)
     df.to_csv('dataset.csv', header=True, index=False)
+    timing.print_timing(data_message)
     return df
