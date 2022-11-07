@@ -1,7 +1,7 @@
 from bitarray import bitarray
 from create_network import query_data, create_network, create_thread_info
 from connect import get
-from getFeatures import get_all
+from getFeatures import get_balanced_dataset
 from sklearn.model_selection import train_test_split
 from Learning import trainall
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
@@ -51,7 +51,7 @@ forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
 # early adopters : only took one or two active users to adopt - define early adopters
 
 # need a better idea of what this is doing
-dataSet = get_all(thread_info, net, t_sus, t_fos, features_bits)
+dataSet = get_balanced_dataset(thread_info, net, t_sus, t_fos, features_bits)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class
