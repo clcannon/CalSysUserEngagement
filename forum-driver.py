@@ -13,6 +13,9 @@ from datetime import timedelta
 forum_config = config.get_config(config, "FORUM")
 forum_id = forum_config.get("ID")
 forum_post_threshold = forum_config.get("POST_THRESHOLD")
+date_config = config.get_config(config, "DATE")
+date_begin = date_config.get("BEGIN")
+date_end = date_config.get("END")
 
 # Get network config
 network_config = config.get_config(config, "NETWORK")
@@ -41,6 +44,10 @@ users, posts = query_data(network_config.get("USER_POSTS_THRESHOLD"),
                           network_config.get("THREAD_POSTS_THRESHOLD"),
                           network_config.get("THREAD_USERS_THRESHOLD"),
                           forum_id)
+
+mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
+posts = posts.loc[mask]
+
 thread_info = create_thread_info(users, posts)
 net = create_network(thread_info)
 
