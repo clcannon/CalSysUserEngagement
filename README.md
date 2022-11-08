@@ -25,6 +25,15 @@ NETWORK:
 TAO:
   SUSCEPTIBLE: "8760"
   FORGETTABLE: "8760"
+  
+FEATURE:
+  NAN: "True"
+  PNE: "True"
+  HUB: "False"
+
+DATE:
+  BEGIN: "2000-6-1"
+  END: "2012-10-31"
 
 Once config.yaml is created with parameters, forum-driver can be run from ide as normal.
 
