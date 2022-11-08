@@ -133,7 +133,7 @@ def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
     return None
 
 
-def get_all(thread_info, N, t_sus, t_fos, features_bits):
+def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
     global start
     start = time_ns()
 
@@ -227,3 +227,28 @@ def get_all(thread_info, N, t_sus, t_fos, features_bits):
     df.to_csv('dataset.csv', header=True, index=False)
     timing.print_timing(data_message)
     return df
+
+
+def get_ratio(thread_info, net, t_sus, t_fos, user_amount):
+    global start
+    start = time_ns()
+    ratio = 0.0
+    count = 0
+
+    for thread in thread_info:
+        thread_posts = thread_info[thread]
+        prev_posts = []
+        prev_posters = set()
+        in_dataset = set()
+
+        for user, time in thread_posts:
+            prev_posts.append((user, time))
+            prev_posters.add(user)
+            if user in in_dataset:
+                continue
+            # get ratio of posters over whole all users
+            ratio += (len(prev_posters) / user_amount)
+            count += 1
+            in_dataset.add(user)
+
+    return ratio / count
