@@ -1,0 +1,62 @@
+from datetime import datetime, timedelta
+
+from create_network import query_data, create_network, create_thread_info
+from connect import get
+import config
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Get forum config
+forum_config = config.get_config(config, "FORUM")
+forum_id = forum_config.get("ID")
+forum_post_threshold = forum_config.get("POST_THRESHOLD")
+date_config = config.get_config(config, "DATE")
+date_begin = date_config.get("BEGIN")
+date_end = date_config.get("END")
+
+# Get network config
+network_config = config.get_config(config, "NETWORK")
+
+users, posts = query_data(network_config.get("USER_POSTS_THRESHOLD"),
+                          network_config.get("USER_THREADS_THRESHOLD"),
+                          network_config.get("THREAD_POSTS_THRESHOLD"),
+                          network_config.get("THREAD_USERS_THRESHOLD"),
+                          forum_id)
+thread_info = create_thread_info(users, posts)
+net = create_network(thread_info)
+
+# get "forum" - topic_id and user_id of every post
+forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
+
+mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
+posts = posts.loc[mask]
+
+# y = count of posts
+# x = time (year month)
+# create data
+post_count_dict = {}
+posts['month'] = pd.DatetimeIndex(posts['posted_date']).month
+posts['year'] = pd.DatetimeIndex(posts['posted_date']).year
+
+for post in posts.iterrows():
+    post_data = post[1]
+    date = post_data[3]
+    new_date = datetime(post_data[5], post_data[4], 1)
+    if new_date not in post_count_dict:
+        post_count_dict[new_date] = 0
+    post_count_dict[new_date] += 1
+
+y = []
+x = []
+for key in post_count_dict:
+    x.append(key)
+    y.append(post_count_dict[key])
+
+# plot
+plt.title("Post frequency in forum " + str(forum_id) + " by month")
+plt.plot(x, y)
+#plt.gcf().autofmt_xdate()
+plt.show()
+
+#  77: earliest - 2012 09-30
+#  84: 2015-06-31 - end
