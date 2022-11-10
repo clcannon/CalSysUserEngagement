@@ -19,6 +19,10 @@ date_end = date_config.get("END")
 
 # Get network config
 network_config = config.get_config(config, "NETWORK")
+user_post_requirement = network_config.get("USER_POSTS_THRESHOLD")
+user_thread_requirement = network_config.get("USER_THREADS_THRESHOLD")
+thread_post_requirement = network_config.get("THREAD_POSTS_THRESHOLD")
+thread_users_requirement = network_config.get("THREAD_USERS_THRESHOLD")
 
 # Get tao config
 t_config = config.get_config(config, "TAO")
@@ -39,10 +43,10 @@ for feature in feature_config:
 
 # load in social network graph for respective forum
 # currently create_network is coupled to the data retrieval... change?
-users, posts = query_data(network_config.get("USER_POSTS_THRESHOLD"),
-                          network_config.get("USER_THREADS_THRESHOLD"),
-                          network_config.get("THREAD_POSTS_THRESHOLD"),
-                          network_config.get("THREAD_USERS_THRESHOLD"),
+users, posts = query_data(user_post_requirement,
+                          user_thread_requirement,
+                          thread_post_requirement,
+                          thread_users_requirement,
                           forum_id)
 
 mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
@@ -65,6 +69,32 @@ Y = dataSet.pop('Class')  # Class
 X = dataSet.drop('user_id', axis=1)
 # change this to 50/50?
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=60)
+trim_X_test = X_test
+trim_Y_test = Y_test
+
+remove_indexes = []
+count = 0
+for label, index in zip(Y_test, trim_X_test.index):
+    # for every 1, skip the next 48 1's.
+    if count >= 49 and label == 1:
+        count = 0
+    elif label == 1:
+        remove_indexes.append(index)
+    else:
+        count += 1
+
+trim_X_test.drop(index=remove_indexes, inplace=True)
+trim_Y_test.drop(index=remove_indexes, inplace=True)
+
+count_1 = 0
+count_0 = 0
+for label in trim_Y_test:
+    if label == 1 or label == '1':
+        count_1 += 1
+    else:
+        count_0 += 1
+
+print("Ratio: " + str(count_1/count_0))
 
 trainall(X_train, X_test, Y_train, Y_test)
 
@@ -82,5 +112,18 @@ print(f"The accuracy of the model is {round(accuracy, 5) * 100} %")
 print(f"The recall of the model is {round(recall, 3) * 100} %")
 print(f"The precision of the model is {round(precision, 5) * 100} %")
 print('Confusion Matrix : \n', confusion_matrix(Y_test, Y_pred))
+
+print(f"Forum: {forum_id}")
+print(f"t_sus: {t_sus}")
+print(f"t_fos: {t_fos}")
+print(f"Begin Date: {date_begin}")
+print(f"End Date: {date_end}")
+print(f"Network Filters: ")
+print(f"    User must post at least {user_post_requirement}")
+print(f"    User must post in at least {user_thread_requirement} unique threads")
+print(f"    Thread must contain at least {thread_post_requirement} posts")
+print(f"    Thread must have at least {thread_post_requirement} unique user participants")
+
+
 print(f"{round(accuracy, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
 
