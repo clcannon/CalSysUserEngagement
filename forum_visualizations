@@ -22,14 +22,7 @@ users, posts = query_data(network_config.get("USER_POSTS_THRESHOLD"),
                           network_config.get("THREAD_POSTS_THRESHOLD"),
                           network_config.get("THREAD_USERS_THRESHOLD"),
                           forum_id)
-thread_info = create_thread_info(users, posts)
-net = create_network(thread_info)
-
-# get "forum" - topic_id and user_id of every post
-forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
-
-mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
-posts = posts.loc[mask]
+# thread_info = create_thread_info(users, posts)
 
 # y = count of posts
 # x = time (year month)
@@ -54,8 +47,16 @@ for key in post_count_dict:
 
 # plot
 plt.title("Post frequency in forum " + str(forum_id) + " by month")
-plt.plot(x, y)
-#plt.gcf().autofmt_xdate()
+color = "navy"
+if forum_id == '77':
+    color = "navy"
+elif forum_id == '84':
+    color = "#a17f1a"  # dark gold
+else:
+    color = "maroon"
+plt.plot(x, y, color=color)
+
+plt.gcf().autofmt_xdate()
 plt.show()
 
 #  77: earliest - 2012 09-30
