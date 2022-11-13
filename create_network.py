@@ -37,7 +37,7 @@ def query_data(user_posts_threshold: int, user_threads_threshold: int, thread_po
     get_users_query = 'select users_id from t_posts \
             where forums_id = ' + str(forum_id) + ' \
             group by users_id \
-            having count(posts_id) > ' + str(user_posts_threshold) + ' and count(distinct topics_id) > ' \
+            having count(posts_id) >= ' + str(user_posts_threshold) + ' and count(distinct topics_id) >= ' \
                       + str(user_threads_threshold) + ''
 
     # print(get_users_query)
@@ -57,13 +57,13 @@ def query_data(user_posts_threshold: int, user_threads_threshold: int, thread_po
                     'from t_posts ' \
                     'where forums_id = ' + str(forum_id) + ' ' \
                                                            'group by users_id ' \
-                                                           'having count(posts_id) > ' + str(
-        user_posts_threshold) + ' and count(distinct topics_id) > ' \
+                                                           'having count(posts_id) >= ' + str(
+        user_posts_threshold) + ' and count(distinct topics_id) >= ' \
                         + str(user_threads_threshold) + ')' \
                                                         ') ' \
                                                         'group by topics_id ' \
-                                                        'having count(posts_id) > ' + str(
-        thread_posts_threshold) + ' and count(distinct users_id) > ' \
+                                                        'having count(posts_id) >= ' + str(
+        thread_posts_threshold) + ' and count(distinct users_id) >= ' \
                         + str(thread_users_threshold) + '' \
                                                         ') ' \
                                                         'order by posted_date asc'
