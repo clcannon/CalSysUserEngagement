@@ -4,8 +4,8 @@ from connect import get
 from getFeatures import get_balanced_dataset
 from sklearn.model_selection import train_test_split
 from Learning import trainall
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import confusion_matrix
 import config
 from datetime import timedelta
 
@@ -103,15 +103,32 @@ model = ExtraTreesClassifier()
 model.fit(X_train, Y_train)
 Y_pred = model.predict(X_test)
 
-accuracy = accuracy_score(Y_test, Y_pred)
-recall = recall_score(Y_test, Y_pred)
-precision = precision_score(Y_test, Y_pred)
+# accuracy = accuracy_score(Y_test, Y_pred)
+# recall = recall_score(Y_test, Y_pred)
+# precision = precision_score(Y_test, Y_pred)
 
 # Printing Confidence of Our Model
-print(f"The accuracy of the model is {round(accuracy, 5) * 100} %")
+# Due to altered test proportion, confusion matrix must be interpreted as:
+# TN FN
+# FP TP
+conf_matrix = confusion_matrix(Y_test, Y_pred)
+TN = conf_matrix[0][0]
+FN = conf_matrix[0][1]
+FP = conf_matrix[1][0]
+TP = conf_matrix[1][1]
+
+print('Confusion Matrix : \n', confusion_matrix(Y_test, Y_pred))
+print(TN, FN)
+print(FP, TP)
+
+recall = TP/(TP + FN)
+precision = TP/(TP + FP)
+f1 = (precision * recall) / (precision + recall)
+
 print(f"The recall of the model is {round(recall, 3) * 100} %")
 print(f"The precision of the model is {round(precision, 5) * 100} %")
-print('Confusion Matrix : \n', confusion_matrix(Y_test, Y_pred))
+print(f"The F1 score of the model is {round(f1, 5) * 100} %")
+
 
 print(f"Forum: {forum_id}")
 print(f"t_sus: {t_sus}")
@@ -125,5 +142,4 @@ print(f"    Thread must contain at least {thread_post_requirement} posts")
 print(f"    Thread must have at least {thread_post_requirement} unique user participants")
 
 
-print(f"{round(accuracy, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
-
+print(f"{round(f1, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
