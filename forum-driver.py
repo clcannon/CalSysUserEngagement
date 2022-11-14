@@ -32,6 +32,11 @@ t_fos = timedelta(hours=int(t_config.get("FORGETTABLE")))
 # Get feature config
 feature_config = config.get_config(config, "FEATURE")
 
+# Get hyperparam config
+hyperparams_et_config = config.get_config(config, "HYPERPARAMS_ET")
+n_estimators = hyperparams_et_config.get("N_ESTIMATORS")
+max_features = hyperparams_et_config.get("sqrt")
+min_samples_split = hyperparams_et_config.get("MIN_SAMPLES_SPLIT")
 # Create features bit array
 # 0 - NAN
 # 1 - PNE
@@ -96,15 +101,14 @@ for label in trim_Y_test:
 
 print("Ratio: " + str(count_1/count_0))
 
-trainall(X_train, X_test, Y_train, Y_test)
+# trainall(X_train, X_test, Y_train, Y_test)
 
 # Creating the Model (Optimised)
-model = ExtraTreesClassifier()
+model = ExtraTreesClassifier(n_estimators=int(n_estimators), max_features=max_features, min_samples_split=int(min_samples_split))
 model.fit(X_train, Y_train)
 Y_pred = model.predict(X_test)
 
-# accuracy = accuracy_score(Y_test, Y_pred)
-# recall = recall_score(Y_test, Y_pred)
+# recall = balanced_recall_score(Y_test, Y_pred, adjusted=False)
 # precision = precision_score(Y_test, Y_pred)
 
 # Printing Confidence of Our Model
