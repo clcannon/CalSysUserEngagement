@@ -148,7 +148,7 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
         thread_posts = thread_info[thread]
         prev_posts = []
         prev_posters = set()
-        in_dataset = set()
+        in_dataset = set()  # we are only looking for the first time a user engages with a post in a time period.
         for user, time in thread_posts:
             prev_posts.append((user, time))
             prev_posters.add(user)
