@@ -148,15 +148,15 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
         thread_posts = thread_info[thread]
         prev_posts = []
         prev_posters = set()
-        in_dataset = set()  # we are only looking for the first time a user engages with a post in a time period.
+        # in_dataset = set()  # we are only looking for the first time a user engages with a post in a time period.
         for user, time in thread_posts:
             prev_posts.append((user, time))
             prev_posters.add(user)
             # can't have active neighbors without previous posts
             if len(prev_posts) > 1:
                 # skip user if they are already in dataset for this topic
-                if user in in_dataset:
-                    continue
+                # if user in in_dataset:
+                #     continue
                 in_neighbors = get_in_neighbors_at_time(net.in_edges(user), time, t_sus, net)
                 if features_bits[2]:
                     NAN, HUB = get_NAN_and_HUB(prev_posts, in_neighbors, time, t_fos, net)
@@ -198,7 +198,7 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
                 data.append(data_row)
                 # data.append([user, NAN, PNE, 1])
                 # currently, each user should get a positive record.
-                in_dataset.add(user)
+                # in_dataset.add(user)
                 # print(user, len(in_neighbors), NAN, PNE, 1)
                 negative_data_row = [negative_user]
                 if features_bits[0]:
