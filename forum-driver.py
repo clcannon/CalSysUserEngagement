@@ -127,7 +127,7 @@ print(FP, TP)
 
 recall = TP/(TP + FN)
 precision = TP/(TP + FP)
-f1 = (precision * recall) / (precision + recall)
+f1 = 2*((precision * recall) / (precision + recall))
 
 print(f"The recall of the model is {round(recall, 3) * 100} %")
 print(f"The precision of the model is {round(precision, 5) * 100} %")
@@ -143,7 +143,7 @@ print(f"Network Filters: ")
 print(f"    User must post at least {user_post_requirement}")
 print(f"    User must post in at least {user_thread_requirement} unique threads")
 print(f"    Thread must contain at least {thread_post_requirement} posts")
-print(f"    Thread must have at least {thread_post_requirement} unique user participants")
+print(f"    Thread must have at least {thread_user_requirement} unique user participants")
 
 
 print(f"{round(f1, 5) * 100}  {round(recall, 3) * 100}  {round(precision, 5) * 100}")
