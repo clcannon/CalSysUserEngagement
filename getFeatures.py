@@ -2,6 +2,7 @@ import pandas as pd
 from time import time_ns
 import timing
 from tqdm import tqdm
+from random import shuffle
 
 
 # TODO: Put timing in this!!!
@@ -36,7 +37,7 @@ def get_NAN(prev_posts, neighbors, t, t_fos):
     return len(active_neighbors)
 
 
-def get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_fos, net):
+def get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_sus, t_fos, net):
     active_neighbors = set()
     hubs_count = 0
     t_fos = t - t_fos
@@ -44,14 +45,14 @@ def get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_fos, net):
         if user in in_neighbors and t >= date > t_fos:
             if user not in active_neighbors:
                 active_neighbors.add(user)
-                if len(net.out_edges(user)) > 50:
+                if len(get_out_neighbors_at_time(net.out_edges(user), t, t_sus, net)) > 50:
                     hubs_count += 1
     return active_neighbors, hubs_count
 
 
-def get_NAN_and_HUB(prev_posts, in_neighbors, t, t_fos, net):
-    active_neighbors, hubs = get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_fos, net)
-    return len(active_neighbors), hubs
+def get_NAN_and_HUB(prev_posts, in_neighbors, t, t_sus, t_fos, net):
+    active_neighbors, hubs = get_active_neighbors_and_hubs(prev_posts, in_neighbors, t, t_sus, t_fos, net)
+    return active_neighbors, len(active_neighbors), hubs
 
 
 def get_active_neighbors_and_NAN(prev_posts, neighbors, t, t_fos):
@@ -60,10 +61,10 @@ def get_active_neighbors_and_NAN(prev_posts, neighbors, t, t_fos):
 
 
 # TODO: Make the hub threshold configurable from a higher level
-def get_HUB(active_neighbors, net):
+def get_HUB(active_neighbors, t, t_sus, net):
     hub_count = 0
     for neighbor in active_neighbors:
-        out_count = net.out_edges(neighbor)
+        out_count = get_out_neighbors_at_time(net.out_edges(neighbor), t, t_sus, net)
         if len(out_count) > 50:
             hub_count += 1
     return hub_count
@@ -118,6 +119,30 @@ def get_in_neighbors_at_time(in_edges, t, t_sus, net):
     return neighbors
 
 
+def get_out_neighbors_at_time(out_edges, t, t_sus, net):
+    # don't look at edges after t (in the future)
+    t_sus = t - t_sus
+    neighbors = set()
+    if out_edges:
+        for user, neighbor in out_edges:
+            data = net.get_edge_data(user, neighbor)
+            for i in data:
+                # prob dont need this if statement
+                if data:
+                    date = data.get(i)['date']
+                    if t >= date > t_sus:
+                        neighbors.add(neighbor)
+                        break
+    return neighbors
+
+
+def get_out_neighbors(out_edges):
+    neighbors = set()
+    for user, neighbor in out_edges:
+        neighbors.add(neighbor)
+    return neighbors
+
+
 def get_root_user(prev_posts, t, t_fos):
     t_fos = t - t_fos
     for user, date in prev_posts:
@@ -126,15 +151,22 @@ def get_root_user(prev_posts, t, t_fos):
     return None
 
 
-def get_negative_user(prev_posts, prev_posters, root_neighbors, t, t_fos):
+def get_negative_user(pos_user, prev_posts, prev_posters, root_neighbors, t, t_sus, t_fos, net):
     for user in root_neighbors:
-        active_neighbors = get_active_neighbors(prev_posts, root_neighbors, t, t_fos)
-        if len(active_neighbors) > 1 and user not in prev_posters:
-            return user
-    return None
+        if user in prev_posts:
+            continue
+        else:
+            in_neighbors = get_in_neighbors_at_time(net.in_edges(user), t, t_sus, net)
+            if in_neighbors:
+                active_neighbors = get_active_neighbors(prev_posts, in_neighbors, t, t_fos)
+                if pos_user in active_neighbors:
+                    continue
+                if len(active_neighbors) >= 1 and user not in prev_posters:
+                    return user, in_neighbors, len(active_neighbors)
+    return None, None, None
 
 
-def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
+def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bits):
     global start
     start = time_ns()
 
@@ -145,7 +177,7 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
         print("No features in configuration. Model requires at least 1 feature to run.")
         return 1
 
-    for thread in tqdm(thread_info):
+    for thread in tqdm(thread_list):
         thread_posts = thread_info[thread]
         prev_posts = []
         prev_posters = set()
@@ -156,14 +188,15 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
             # can't have active neighbors without previous posts
             if len(prev_posts) > 1:
                 # skip user if they are already in dataset for this topic
-                if user in in_dataset:
+                if user in in_dataset or time < time - t_fos:
                     continue
                 in_neighbors = get_in_neighbors_at_time(net.in_edges(user), time, t_sus, net)
                 if features_bits[2]:
-                    NAN, HUB = get_NAN_and_HUB(prev_posts, in_neighbors, time, t_fos, net)
+                    active_neighbors, NAN, HUB = get_NAN_and_HUB(prev_posts, in_neighbors, time, t_sus, t_fos, net)
                 else:
                     NAN = get_NAN(prev_posts, in_neighbors, time, t_fos)
                 if NAN < 1:
+                    in_dataset.add(user)  # Count them as added w/out adding them... they're an "innovator"
                     continue
                 if features_bits[1]:
                     PNE = get_PNE(NAN, len(in_neighbors))
@@ -172,21 +205,22 @@ def get_balanced_dataset(thread_info, N, t_sus, t_fos, features_bits):
                 root_user = get_root_user(prev_posts, time, t_fos)
                 if not root_user:
                     continue
-                root_neighbors = get_in_neighbors_at_time(net.in_edges(root_user), time, t_sus, net)
+                root_neighbors = get_out_neighbors_at_time(net.out_edges(root_user), time, t_sus, net)
                 # someone who has not posted in the thread but has 2 active neighbors wrt thread (root + 1 additional)
-                negative_user = get_negative_user(prev_posts, prev_posters, root_neighbors, time, t_fos)
+                negative_user, in_neighbors_negative, NAN_negative = get_negative_user(user, prev_posts, prev_posters, root_neighbors, time, t_sus, t_fos, net)
                 if not negative_user:
                     continue
-                in_neighbors_negative = get_in_neighbors_at_time(net.in_edges(negative_user), time, t_sus, net)
                 if features_bits[2]:
-                    NAN_negative, HUB_negative = get_NAN_and_HUB(prev_posts, in_neighbors_negative, time, t_fos, net)
-                else:
-                    NAN_negative = get_NAN(prev_posts, in_neighbors_negative, time, t_fos)
+                    #in_neighbors_negative = get_in_neighbors_at_time(net.in_edges(negative_user), time, t_sus, net)
+                    negative_active_neighbors, NAN_negative, HUB_negative = get_NAN_and_HUB(prev_posts, in_neighbors_negative, time, t_sus, t_fos, net)
+                # else:
+                #     NAN_negative = get_NAN(prev_posts, in_neighbors_negative, time, t_fos)
                 if NAN_negative < 1:
                     continue
                 if features_bits[1]:
                     PNE_negative = get_PNE(NAN_negative, len(in_neighbors_negative))
-                # HUB_negative = get_HUB(active_neighbors_negative, net)
+                # if features_bits[2]:
+                #     HUB_negative = get_HUB(negative_active_neighbors, time, t_sus, net)
                 # only appends if both samples were good? change this?
                 data_row = [user]
                 if features_bits[0]:
