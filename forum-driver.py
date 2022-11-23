@@ -11,7 +11,7 @@ from sklearn.naive_bayes import GaussianNB
 
 from sklearn.metrics import confusion_matrix
 import config
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 # Get forum config
 forum_config = config.get_config(config, "FORUM")
@@ -59,8 +59,9 @@ users, posts = query_data(user_post_requirement,
                           thread_users_requirement,
                           forum_id)
 
-# mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
-# posts = posts.loc[mask]
+date_begin = datetime.strptime(date_begin, "%Y-%m-%d")
+mask = (posts['posted_date'] > (date_begin - t_sus)) & (posts['posted_date'] <= date_end)
+posts = posts.loc[mask]
 
 thread_info = create_thread_info(users, posts)
 net = create_network(thread_info)
@@ -76,8 +77,13 @@ forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
 # first in topic is the innovator
 # early adopters : only took one or two active users to adopt - define early adopters
 
+positive_users = {}
+for topic in thread_info:
+    users = forum[forum['topics_id'] == topic]['users_id'].to_list()
+    positive_users[topic] = set(users)
+
 # need a better idea of what this is doing
-dataSet = get_balanced_dataset(thread_list, thread_info, net, t_sus, t_fos, features_bits)
+dataSet = get_balanced_dataset(thread_list, thread_info, net, t_sus, t_fos, features_bits, positive_users)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class

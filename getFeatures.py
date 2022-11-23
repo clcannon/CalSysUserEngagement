@@ -166,7 +166,7 @@ def get_negative_user(pos_user, prev_posts, prev_posters, root_neighbors, t, t_s
     return None, None, None
 
 
-def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bits):
+def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bits, positive_users):
     global start
     start = time_ns()
 
@@ -181,10 +181,13 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
         thread_posts = thread_info[thread]
         prev_posts = []
         prev_posters = set()
+        active_users_total = positive_users[thread]
         in_dataset = set()  # we are only looking for the first time a user engages with a post in a time period.
         for user, time in thread_posts:
             prev_posts.append((user, time))
             prev_posters.add(user)
+            if len(prev_posters) == len(active_users_total):
+                break
             # can't have active neighbors without previous posts
             if len(prev_posts) > 1:
                 # skip user if they are already in dataset for this topic
