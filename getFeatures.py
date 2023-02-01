@@ -119,6 +119,22 @@ def get_in_neighbors_at_time(in_edges, t, t_sus, net):
     return neighbors
 
 
+def get_in_prev_post_count_at_time(in_edges, t, t_sus, net):
+    # don't look at edges after t (in the future)
+    t_sus = t - t_sus
+    posts = 0
+    for neighbor, user in in_edges:
+        data = net.get_edge_data(neighbor, user)
+        for i in data:
+            # prob dont need this if statement
+            if data:
+                date = data.get(i)['date']
+                if t >= date > t_sus:
+                    posts += 1
+                    break
+    return posts
+
+
 def get_out_neighbors_at_time(out_edges, t, t_sus, net):
     # don't look at edges after t (in the future)
     t_sus = t - t_sus
@@ -151,9 +167,9 @@ def get_root_user(prev_posts, t, t_fos):
     return None
 
 
-def get_negative_user(pos_user, prev_posts, prev_posters, root_neighbors, t, t_sus, t_fos, net):
+def get_negative_user(pos_user, prev_posts, prev_posters, root_neighbors, t, t_sus, t_fos, net, in_dataset_negative):
     for user in root_neighbors:
-        if user in prev_posts:
+        if user in prev_posts or user in in_dataset_negative:
             continue
         else:
             in_neighbors = get_in_neighbors_at_time(net.in_edges(user), t, t_sus, net)
@@ -173,9 +189,9 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
     net = N
     data = []
 
-    if not features_bits.any():
-        print("No features in configuration. Model requires at least 1 feature to run.")
-        return 1
+    # if not features_bits.any():
+    #     print("No features in configuration. Model requires at least 1 feature to run.")
+    #     return 1
 
     for thread in tqdm(thread_list):
         thread_posts = thread_info[thread]
@@ -183,6 +199,7 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
         prev_posters = set()
         active_users_total = positive_users[thread]
         in_dataset = set()  # we are only looking for the first time a user engages with a post in a time period.
+        in_dataset_negative = set()
         for user, time in thread_posts:
             prev_posts.append((user, time))
             prev_posters.add(user)
@@ -204,13 +221,16 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
                 if features_bits[1]:
                     PNE = get_PNE(NAN, len(in_neighbors))
 
+                if features_bits[3]:
+                    PPP = get_in_prev_post_count_at_time(net.in_edges(user), time, t_sus, net)
+
                 # make negative sample
                 root_user = get_root_user(prev_posts, time, t_fos)
                 if not root_user:
                     continue
                 root_neighbors = get_out_neighbors_at_time(net.out_edges(root_user), time, t_sus, net)
                 # someone who has not posted in the thread but has 2 active neighbors wrt thread (root + 1 additional)
-                negative_user, in_neighbors_negative, NAN_negative = get_negative_user(user, prev_posts, prev_posters, root_neighbors, time, t_sus, t_fos, net)
+                negative_user, in_neighbors_negative, NAN_negative = get_negative_user(user, prev_posts, prev_posters, root_neighbors, time, t_sus, t_fos, net,in_dataset_negative)
                 if not negative_user:
                     continue
                 if features_bits[2]:
@@ -225,6 +245,9 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
                 # if features_bits[2]:
                 #     HUB_negative = get_HUB(negative_active_neighbors, time, t_sus, net)
                 # only appends if both samples were good? change this?
+                if features_bits[3]:
+                    PPP_negative = get_in_prev_post_count_at_time(net.in_edges(negative_user), time, t_sus, net)
+
                 data_row = [user]
                 if features_bits[0]:
                     data_row.append(NAN)
@@ -232,12 +255,14 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
                     data_row.append(PNE)
                 if features_bits[2]:
                     data_row.append(HUB)
+                if features_bits[3]:
+                    data_row.append(PPP)
                 data_row.append(1)
                 data.append(data_row)
                 # data.append([user, NAN, PNE, 1])
                 # currently, each user should get a positive record.
                 in_dataset.add(user)
-                # print(user, len(in_neighbors), NAN, PNE, 1)
+                # print(data_row)
                 negative_data_row = [negative_user]
                 if features_bits[0]:
                     negative_data_row.append(NAN_negative)
@@ -245,8 +270,12 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
                     negative_data_row.append(PNE_negative)
                 if features_bits[2]:
                     negative_data_row.append(HUB_negative)
+                if features_bits[3]:
+                    negative_data_row.append(PPP_negative)
                 negative_data_row.append(0)
+                in_dataset_negative.add(negative_user)
                 data.append(negative_data_row)
+                # print(negative_data_row)
                 # print(negative_user, len(in_neighbors_negative), NAN_negative, PNE_negative, 0)
     columns = ['user_id']
     data_message = "Compiled Data: "
@@ -259,6 +288,9 @@ def get_balanced_dataset(thread_list, thread_info, N, t_sus, t_fos, features_bit
     if features_bits[2]:
         columns.append('HUB')
         data_message += "HUB "
+    if features_bits[3]:
+        columns.append('PPP')
+        data_message += "PPP "
 
     columns.append('Class')
     df = pd.DataFrame(data, columns=columns)

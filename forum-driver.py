@@ -8,8 +8,9 @@ from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier, RandomFor
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-
 from sklearn.metrics import confusion_matrix
+from sklearn.dummy import DummyClassifier
+
 import config
 from datetime import timedelta, datetime
 
@@ -60,7 +61,8 @@ users, posts = query_data(user_post_requirement,
                           forum_id)
 
 date_begin = datetime.strptime(date_begin, "%Y-%m-%d")
-mask = (posts['posted_date'] > (date_begin - t_sus)) & (posts['posted_date'] <= date_end)
+print(max(t_sus, t_fos))
+mask = (posts['posted_date'] > (date_begin - max(t_sus, t_fos))) & (posts['posted_date'] <= date_end)
 posts = posts.loc[mask]
 
 thread_info = create_thread_info(users, posts)
@@ -124,6 +126,10 @@ model = ExtraTreesClassifier(n_estimators=int(n_estimators), max_features=max_fe
                              min_samples_split=int(min_samples_split))
 model.fit(X_train, Y_train)
 Y_pred = model.predict(X_test)
+
+dummy_model = DummyClassifier()
+dummy_model.fit(X_train, Y_train)
+dummy_pred = dummy_model.predict(X_test)
 
 rf_model = RandomForestClassifier()
 rf_model.fit(X_train, Y_train)
@@ -194,18 +200,30 @@ def get_f1_recall_precision(labels, predictions):
 
 print("Extra Trees:")
 get_f1_recall_precision(Y_test, Y_pred)
+print("\n")
 
-print("Random Forest:")
-get_f1_recall_precision(Y_test, rf_pred)
+# print("Dummy:")
+# get_f1_recall_precision(Y_test, dummy_pred)
 
-print("Ada Boost:")
-get_f1_recall_precision(Y_test, ada_pred)
+# print("Random Forest:")
+# get_f1_recall_precision(Y_test, rf_pred)
+# print("\n")
+#
+# print("Ada Boost:")
+# get_f1_recall_precision(Y_test, ada_pred)
+# print("\n")
+#
+# print("SVC:")
+# get_f1_recall_precision(Y_test, svc_pred)
+# print("\n")
+#
+# print("KNN:")
+# get_f1_recall_precision(Y_test, knn_pred)
+# print("\n")
+#
+# print("Naive Bayes:")
+# get_f1_recall_precision(Y_test, nb_pred)
 
-print("SVC:")
-get_f1_recall_precision(Y_test, svc_pred)
+print("\n")
+print("\n")
 
-print("KNN:")
-get_f1_recall_precision(Y_test, knn_pred)
-
-print("Naive Bayes:")
-get_f1_recall_precision(Y_test, nb_pred)
