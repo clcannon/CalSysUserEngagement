@@ -8,10 +8,11 @@ from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier, RandomFor
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-
 from sklearn.metrics import confusion_matrix
+from sklearn.dummy import DummyClassifier
+
 import config
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 # Get forum config
 forum_config = config.get_config(config, "FORUM")
@@ -59,8 +60,10 @@ users, posts = query_data(user_post_requirement,
                           thread_users_requirement,
                           forum_id)
 
-# mask = (posts['posted_date'] > date_begin) & (posts['posted_date'] <= date_end)
-# posts = posts.loc[mask]
+date_begin = datetime.strptime(date_begin, "%Y-%m-%d")
+print(max(t_sus, t_fos))
+mask = (posts['posted_date'] > (date_begin - max(t_sus, t_fos))) & (posts['posted_date'] <= date_end)
+posts = posts.loc[mask]
 
 thread_info = create_thread_info(users, posts)
 net = create_network(thread_info)
@@ -76,8 +79,13 @@ forum = get('t_posts', 'topics_id, users_id', where='forums_id = ' + forum_id)
 # first in topic is the innovator
 # early adopters : only took one or two active users to adopt - define early adopters
 
+positive_users = {}
+for topic in thread_info:
+    users = forum[forum['topics_id'] == topic]['users_id'].to_list()
+    positive_users[topic] = set(users)
+
 # need a better idea of what this is doing
-dataSet = get_balanced_dataset(thread_list, thread_info, net, t_sus, t_fos, features_bits)
+dataSet = get_balanced_dataset(thread_list, thread_info, net, t_sus, t_fos, features_bits, positive_users)
 
 # dataSet = pd.read_csv('dataset.csv')
 Y = dataSet.pop('Class')  # Class
@@ -118,6 +126,10 @@ model = ExtraTreesClassifier(n_estimators=int(n_estimators), max_features=max_fe
                              min_samples_split=int(min_samples_split))
 model.fit(X_train, Y_train)
 Y_pred = model.predict(X_test)
+
+dummy_model = DummyClassifier()
+dummy_model.fit(X_train, Y_train)
+dummy_pred = dummy_model.predict(X_test)
 
 rf_model = RandomForestClassifier()
 rf_model.fit(X_train, Y_train)
@@ -188,18 +200,30 @@ def get_f1_recall_precision(labels, predictions):
 
 print("Extra Trees:")
 get_f1_recall_precision(Y_test, Y_pred)
+print("\n")
 
-print("Random Forest:")
-get_f1_recall_precision(Y_test, rf_pred)
+# print("Dummy:")
+# get_f1_recall_precision(Y_test, dummy_pred)
 
-print("Ada Boost:")
-get_f1_recall_precision(Y_test, ada_pred)
+# print("Random Forest:")
+# get_f1_recall_precision(Y_test, rf_pred)
+# print("\n")
+#
+# print("Ada Boost:")
+# get_f1_recall_precision(Y_test, ada_pred)
+# print("\n")
+#
+# print("SVC:")
+# get_f1_recall_precision(Y_test, svc_pred)
+# print("\n")
+#
+# print("KNN:")
+# get_f1_recall_precision(Y_test, knn_pred)
+# print("\n")
+#
+# print("Naive Bayes:")
+# get_f1_recall_precision(Y_test, nb_pred)
 
-print("SVC:")
-get_f1_recall_precision(Y_test, svc_pred)
+print("\n")
+print("\n")
 
-print("KNN:")
-get_f1_recall_precision(Y_test, knn_pred)
-
-print("Naive Bayes:")
-get_f1_recall_precision(Y_test, nb_pred)
